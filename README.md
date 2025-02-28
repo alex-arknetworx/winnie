@@ -8,7 +8,7 @@ Ensure you have the following font installed or create and copy the font+folder 
 
 Precompiled x86 binaries in bin_x86. You will have to chmod 777 the wserver bin file first then only use on a Linux fb console run sudo ./wserver from within /bin_x86/wserver/
 
-Or to compile from source ensure pkg-config is installed and then clone this repo and then:
+Or to compile from source ensure pkg-config, libfreetype6-dev (and/or libfreetype-dev) is installed, clone this repo and then:
 
 cd winnie/libwinnie/
 
