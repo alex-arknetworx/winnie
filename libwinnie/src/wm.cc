@@ -136,7 +136,7 @@ WindowManager::WindowManager()
 	bg_color[1] = 106;
 	bg_color[2] = 106;
 
-	frame_thickness = 6;
+	frame_thickness = 3;
 	titlebar_thickness = 18;
 
 	set_focused_frame_color(64, 64, 64);
