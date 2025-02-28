@@ -15,8 +15,8 @@ ifeq ($(backend), SDL)
 endif
 
 CXX = g++
-CXXFLAGS = -pedantic -Wall -fPIC $(dbg) $(opt) $(inc) $(def) `freetype-config --cflags`
-LDFLAGS = $(libs) `freetype-config --libs` -lrt
+CXXFLAGS = -pedantic -Wall -fPIC $(dbg) $(opt) $(inc) $(def) `pkg-config --cflags freetype2`
+LDFLAGS = $(libs) `pkg-config --libs freetype2` -lrt
 
 $(lib_so): $(obj)
 	$(CXX) -o $@ -shared $(obj) $(LDFLAGS)
