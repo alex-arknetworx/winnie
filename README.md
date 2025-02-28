@@ -1,8 +1,9 @@
 Framebuffer Window System
 
-Compiles and runs on Debian 11.11 console with no X or Wayland [uses fbdev].
+Compiles and runs on Debian 11.11 console with no X or Wayland (uses fbdev directly).
+some precompiled x86 binaries in bin_x86. At the linux console run sudo ./wserver from within /bin_x86/wserver/
 
-Clone the repo then:
+Or to compile from source clone the repo and then:
 
 cd winnie/libwinnie/
 
