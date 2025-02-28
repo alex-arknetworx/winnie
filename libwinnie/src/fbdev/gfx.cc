@@ -33,6 +33,7 @@ Author: Eleni Maria Stea <elene.mst@gmail.com>
 #include <unistd.h>
 
 #include <linux/fb.h>
+#include <linux/kd.h>
 
 #include "gfx.h"
 #include "shalloc.h"
@@ -42,6 +43,7 @@ Author: Eleni Maria Stea <elene.mst@gmail.com>
 
 static unsigned char *framebuffer;
 static int dev_fd;
+static int dev_tty;
 static int rgb_order[3];
 
 struct Graphics {
@@ -78,6 +80,18 @@ bool init_gfx()
 
 	printf("width : %d height : %d\n : bpp : %d\n", sinfo.xres, sinfo.yres, sinfo.bits_per_pixel);
 	printf("virtual w: %d virtual h: %d\n", sinfo.xres_virtual, sinfo.yres_virtual);
+
+	dev_tty = -1;
+
+	if((dev_tty = open("/dev/tty0", O_RDWR)) == -1) {
+		fprintf(stderr, "Cannot open /dev/tty0 : %s\n", strerror(errno));
+		return false;
+	}
+
+	if((ioctl(dev_tty, KDSETMODE, KD_GRAPHICS)) == -1) {
+		fprintf(stderr, "Unable to set console graphics mode : %s\n", strerror(errno));
+		return false;
+	}
 
 	gfx->screen_rect.x = gfx->screen_rect.y = 0;
 	gfx->screen_rect.width = sinfo.xres_virtual;
@@ -143,6 +157,13 @@ void destroy_gfx()
 
 	munmap(framebuffer, FRAMEBUFFER_SIZE(gfx->screen_rect.width, gfx->screen_rect.height, gfx->color_depth));
 	framebuffer = 0;
+
+	if(dev_tty != -1) {
+		ioctl(dev_tty, KDSETMODE, KD_TEXT);
+		close(dev_tty);
+	}
+
+	dev_tty = -1;
 
 	sh_free(gfx->pixmap->pixels);
 	gfx->pixmap->pixels = 0;
