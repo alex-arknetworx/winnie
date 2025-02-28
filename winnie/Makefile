@@ -7,20 +7,13 @@ dbg = -g
 opt = -O0
 inc = -Isrc -I../libwinnie/src
 
-backend = SDL
-
-ifeq ($(backend), SDL)
-	def = -DWINNIE_SDL
-	libs = -lSDL
-else
-	def = -DWINNIE_FBDEV
-endif
+include ../backend.mk
 
 CXX = g++
-CXXFLAGS = -pedantic -Wall $(dbg) $(opt) $(inc) $(def) `freetype-config --cflags`
-LDFLAGS = -L../libwinnie $(libs) `freetype-config --libs` -lrt -lwinnie
+CXXFLAGS = -pedantic -Wall $(dbg) -fPIC -D_GNU_SOURCE $(opt) $(inc) $(def) `freetype-config --cflags`
+LDFLAGS = -L../libwinnie $(libs) `freetype-config --libs` -lrt -lwinnie -ldl
 
-$(bin): $(obj) ../libwinnie/libwinnie.so
+$(bin): $(obj)
 	$(CXX) -o $@ $(obj) $(LDFLAGS) -Wl,-rpath=../libwinnie
 
 -include $(dep)

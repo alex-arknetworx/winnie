@@ -31,7 +31,7 @@ Author: Eleni Maria Stea <elene.mst@gmail.com>
 class Window;
 
 bool init_window_manager();
-void destroy_window_manager(); 
+void destroy_window_manager();
 
 bool client_open_wm(void *smem_start, int offset);
 void client_close_wm();
@@ -47,6 +47,7 @@ private:
 	int titlebar_thickness;
 	int frame_fcolor[3];
 	int frame_ucolor[3];
+	int bevel_sz;
 
 	Window *root_win;
 	Window *focused_win;
@@ -80,6 +81,18 @@ public:
 
 	void set_unfocused_frame_color(int r, int g, int b);
 	void get_unfocused_frame_color(int *r, int *g, int *b) const;
+
+	void set_frame_size(int sz);
+	int get_frame_size() const;
+
+	void set_titlebar_size(int sz);
+	int get_titlebar_size() const;
+
+	void set_bevel_size(int sz);
+	int get_bevel_size() const;
+
+	void set_background_color(int r, int g, int b);
+	void get_background_color(int *r, int *g, int *b) const;
 
 	void set_background(const Pixmap *pixmap);
 	const Pixmap *get_background() const;

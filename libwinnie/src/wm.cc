@@ -48,7 +48,7 @@ bool init_window_manager()
 		return false;
 	}
 
-	wm = new (wm_mem) WindowManager; 
+	wm = new (wm_mem) WindowManager;
 
 	get_subsys()->wm_offset = (int)((char*)wm - (char*)get_pool());
 
@@ -136,11 +136,12 @@ WindowManager::WindowManager()
 	bg_color[1] = 106;
 	bg_color[2] = 106;
 
-	frame_thickness = 8;
-	titlebar_thickness = 16;
+	frame_thickness = 6;
+	titlebar_thickness = 18;
 
-	set_focused_frame_color(0, 0, 0);
-	set_unfocused_frame_color(200, 200, 200);
+	set_focused_frame_color(64, 64, 64);
+	set_unfocused_frame_color(160, 160, 160);
+	set_bevel_size(2);
 
 	mouse_cursor.set_image(mouse_cursor_width, mouse_cursor_height);
 	unsigned char *pixels = mouse_cursor.get_image();
@@ -240,13 +241,11 @@ void WindowManager::set_focused_window(Window *win)
 		return;
 	}
 
-	Window *parent;
 	if(focused_win) {
 		// invalidate the frame (if any)
-		parent = focused_win->get_parent();
+		Window *parent = focused_win->get_parent();
 		if(parent && parent != root_win) {
 			parent->invalidate();
-			fill_rect(parent->get_absolute_rect(), frame_ucolor[0], frame_ucolor[1], frame_ucolor[2]);
 		}
 	}
 
@@ -257,8 +256,6 @@ void WindowManager::set_focused_window(Window *win)
 
 	if(win->get_focusable()) {
 		focused_win = win;
-		parent = focused_win->get_parent();
-		fill_rect(parent->get_absolute_rect(), frame_fcolor[0], frame_fcolor[1], frame_fcolor[2]);
 		return;
 	}
 
@@ -266,7 +263,6 @@ void WindowManager::set_focused_window(Window *win)
 	for(int i=0; i<win->get_children_count(); i++) {
 		if(children[0]->get_focusable()) {
 			set_focused_window(children[0]);
-			fill_rect(win->get_absolute_rect(), frame_fcolor[0], frame_fcolor[1], frame_fcolor[2]);
 			return;
 		}
 	}
@@ -328,6 +324,50 @@ void WindowManager::get_unfocused_frame_color(int *r, int *g, int *b) const
 	*r = frame_ucolor[0];
 	*g = frame_ucolor[1];
 	*b = frame_ucolor[2];
+}
+
+void WindowManager::set_frame_size(int sz)
+{
+	frame_thickness = sz;
+}
+
+int WindowManager::get_frame_size() const
+{
+	return frame_thickness;
+}
+
+void WindowManager::set_titlebar_size(int sz)
+{
+	titlebar_thickness = sz;
+}
+
+int WindowManager::get_titlebar_size() const
+{
+	return titlebar_thickness;
+}
+
+void WindowManager::set_bevel_size(int sz)
+{
+	bevel_sz = sz;
+}
+
+int WindowManager::get_bevel_size() const
+{
+	return bevel_sz;
+}
+
+void WindowManager::set_background_color(int r, int g, int b)
+{
+	bg_color[0] = r;
+	bg_color[1] = g;
+	bg_color[2] = b;
+}
+
+void WindowManager::get_background_color(int *r, int *g, int *b) const
+{
+	*r = bg_color[0];
+	*g = bg_color[1];
+	*b = bg_color[2];
 }
 
 void WindowManager::set_background(const Pixmap *pixmap)
@@ -401,7 +441,7 @@ void WindowManager::sink_window(Window *win)
 void WindowManager::maximize_window(Window *win)
 {
 	win->normal_rect = win->rect;
-	
+
 	Rect rect = get_screen_size();
 
 	Window *frame;
@@ -419,6 +459,8 @@ void WindowManager::maximize_window(Window *win)
 
 	win->resize(rect.width, rect.height);
 	win->set_state(Window::STATE_MAXIMIZED);
+
+	invalidate_region(rect);
 }
 
 void WindowManager::unmaximize_window(Window *win)
@@ -440,22 +482,62 @@ static void display(Window *win)
 	//frame display:
 	Window *child = win->get_children()[0];
 	int r, g, b;
-	Rect abs_rect = win->get_absolute_rect();
+	Rect rect = win->get_absolute_rect();
 
-	//TODO 5 not hardcoded
-	set_text_position(abs_rect.x + 5, abs_rect.y + 15);
-	set_text_color(255, 255, 255);
+	int tbar = wm->get_titlebar_size();
+	int frm = wm->get_frame_size();
+
+
 
 	if(child == wm->get_focused_window()) {
 		wm->get_focused_frame_color(&r, &g, &b);
-		fill_rect(abs_rect, r, g, b);
 	}
 	else {
 		wm->get_unfocused_frame_color(&r, &g, &b);
-		fill_rect(win->get_absolute_rect(), r, g, b);
 	}
 
+	// draw the four frame sides (top, bottom, left, right)
+	fill_rect(Rect(rect.x, rect.y, rect.width, frm), r, g, b);
+	fill_rect(Rect(rect.x, rect.y + rect.height - frm, rect.width, frm), r, g, b);
+	fill_rect(Rect(rect.x, rect.y + frm, frm, rect.height - 2 * frm), r, g, b);
+	fill_rect(Rect(rect.x + rect.width - frm, rect.y + frm, frm, rect.height - 2 * frm), r, g, b);
+	// draw the titlebar
+	fill_rect(Rect(rect.x + frm, rect.y + frm, rect.width - 2 * frm, tbar), r, g, b);
+
+
+	int val = (r + g + b) / 3;
+	int roffs = val < 128 ? r / 2 : (255 - r) / 2;
+	int goffs = val < 128 ? g / 2 : (255 - g) / 2;
+	int boffs = val < 128 ? b / 2 : (255 - b) / 2;
+
+	// draw bevels
+	int dark_r = r - roffs;
+	int dark_g = g - goffs;
+	int dark_b = b - boffs;
+
+	int lt_r = r + roffs;
+	int lt_g = g + goffs;
+	int lt_b = b + boffs;
+
+
+	set_text_position(rect.x + frm + 2, rect.y + frm + tbar - 5);
+	set_text_color(80, 80, 80);
 	draw_text(child->get_title());
+	set_text_position(rect.x + frm + 1, rect.y + frm + tbar - 6);
+	set_text_color(255, 255, 255);
+	draw_text(child->get_title());
+
+	int bevel = wm->get_bevel_size();
+	fill_rect(Rect(rect.x, rect.y, bevel, rect.height), lt_r, lt_g, lt_b);
+	fill_rect(Rect(rect.x, rect.y + rect.height - bevel, rect.width, bevel), dark_r, dark_g, dark_b);
+	fill_rect(Rect(rect.x + rect.width - bevel, rect.y, bevel, rect.height), dark_r, dark_g, dark_b);
+	fill_rect(Rect(rect.x, rect.y, rect.width, bevel), lt_r, lt_g, lt_b);
+
+	Rect inner = Rect(rect.x + frm, rect.y + frm + tbar, rect.width - frm * 2, rect.height - frm * 2 - tbar);
+	fill_rect(Rect(inner.x - bevel, inner.y + inner.height, inner.width + 2 * bevel, bevel), lt_r, lt_g, lt_b);
+	fill_rect(Rect(inner.x - bevel, inner.y - bevel, bevel, inner.height + 2 * bevel), dark_r, dark_g, dark_b);
+	fill_rect(Rect(inner.x + inner.width, inner.y - bevel, bevel, inner.height + 2 * bevel), lt_r, lt_g, lt_b);
+	fill_rect(Rect(inner.x - bevel, inner.y - bevel, inner.width + 2 * bevel, bevel), dark_r, dark_g, dark_b);
 }
 
 static int prev_x, prev_y;
@@ -465,7 +547,7 @@ static void mouse(Window *win, int bn, bool pressed, int x, int y)
 	static long last_click = 0;
 
 	if(bn == 0) {
-		if(pressed) {	
+		if(pressed) {
 			wm->grab_mouse(win);
 			wm->raise_window(win);
 			prev_x = x;
