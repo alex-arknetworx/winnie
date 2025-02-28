@@ -39,12 +39,12 @@ int main()
 
 	atexit(cleanup);
 
-	Pixmap bg;
-	if(bg.load("data/bg.ppm")) {
-		wm->set_background(&bg);
-	} else {
+	//Pixmap bg;
+	//if(bg.load("data/bg.ppm")) {
+	//	wm->set_background(&bg);
+	//} else {
 		wm->set_background_color(64, 64, 64);
-	}
+	//}
 
 
 	while(1) {
